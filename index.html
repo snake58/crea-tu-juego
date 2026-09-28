@@ -193,12 +193,13 @@ const sfx={
   win(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.15),i*110));},
   tap(){beep(920,.07,'triangle');},
   pop(){beep(700,.08,'square');setTimeout(()=>beep(1050,.1,'square'),60);},
-  fanfare(){[392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle'),i*120));}
+  fanfare(){[392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle'),i*120));},
+  fire(){beep(150,.28,'sawtooth');setTimeout(()=>beep(105,.32,'sawtooth'),90);setTimeout(()=>beep(190,.2,'square'),40);}
 };
 
 /* ---------- games ---------- */
 const GAMES=[
- {id:'dragon',keys:['dragon','dragón','dragones','tesoro','tesoros','fuego','volar','volando'],title:'Dragón: Lluvia de Tesoros',hero:'assets/heroe-dragon.webp',bg:'assets/fondo-tesoro.webp',mech:'catch',heroW:.30,catchMsg:'¡Atrapa gemas y monedas! ¡Esquiva las rocas!'},
+ {id:'dragon',keys:['dragon','dragón','dragones','tesoro','tesoros','fuego','volar','volando'],title:'Dragón: Aliento de Fuego',hero:'assets/heroe-dragon.webp',bg:'assets/fondo-cielo-dragon.webp',mech:'catch',heroW:.34,catchMsg:'¡Vuela con el dragón! Toca para escupir FUEGO y quemar las rocas. ¡Atrapa el tesoro!'},
  {id:'robot',keys:['robot','espacio','planeta','cohete','nave','alien','marte','luna'],title:'Robot: Carrera Espacial',hero:'assets/heroe-robot.webp',bg:'assets/fondo-espacio.webp',mech:'run',heroW:.26,catchMsg:'¡Salta los cráteres! ¡Corre sin parar!'},
  {id:'ninja',keys:['ninja','sombra','samurai','katana','sigilo'],title:'Ninja: Misión Sombra',hero:'assets/heroe-ninja.webp',bg:'assets/fondo-dojo.webp',mech:'tap',heroW:.30,catchMsg:'¡Toca las estrellas! ¡No toques las bombas!'},
  {id:'bruja',keys:['bruja','magia','hechizo','poción','pocion','mago','hada'],title:'Bruja: Pociones Mágicas',hero:'assets/heroe-bruja.webp',bg:'assets/fondo-castillo.webp',mech:'catch',heroW:.28,catchMsg:'¡Atrapa estrellas mágicas! ¡Esquiva el carbón!'},
@@ -232,6 +233,8 @@ async function loadAssets(){
   for(const g of GAMES){files['h_'+g.id]=g.hero;files['b_'+g.id]=g.bg;}
   for(const k in files){IMG[k]=await loadImg(files[k]);}
   for(const g of GAMES){const im=IMG['h_'+g.id];if(im)IMG['h_'+g.id]=chromaKey(im);}
+  IMG['h_dragon_f2']=chromaKey(await loadImg('assets/heroe-dragon-alas2.webp'));
+  IMG['h_dragon_f3']=chromaKey(await loadImg('assets/heroe-dragon-alas3.webp'));
   for(const g of GAMES){try{KEYURL[g.id]=IMG['h_'+g.id].toDataURL('image/webp',.9);}catch(e){}}
   startCarousel();
 }
@@ -251,7 +254,7 @@ function drawCover(img){
 }
 
 /* ---------- flow ---------- */
-const EXAMPLES=['un dragón que atrapa tesoros','un robot en el espacio','un ninja en la noche','una bruja con pociones','un explorador en el océano'];
+const EXAMPLES=['un dragón que escupe fuego','un robot en el espacio','un ninja en la noche','una bruja con pociones','un explorador en el océano'];
 function buildChips(){$('#chips').innerHTML='';EXAMPLES.forEach(e=>{const c=document.createElement('div');c.className='chip';c.textContent='💡 '+e;c.onclick=()=>{$('#ideaInput').value=e;startCreate();};$('#chips').appendChild(c);});}
 
 async function startCreate(){
@@ -359,7 +362,8 @@ function startGame(g){
   const f=$('#flash');if(f){f.style.opacity='1';setTimeout(()=>f.style.opacity='0',80);}
   show('#screen-game');sizeCanvas();
   playIntro(g,()=>{
-    if(g.mech==='catch')startCatch(g);
+    if(g.id==='dragon')startDragon(g);
+    else if(g.mech==='catch')startCatch(g);
     else if(g.mech==='run')startRun(g);
     else startTap(g);
   });
@@ -393,9 +397,9 @@ function drawBomb(x,y,r,t){ctx.save();ctx.translate(x,y);ctx.fillStyle='#2b2b33'
 function burst(x,y,color){if(!G)return;for(let i=0;i<12;i++)G.parts.push({x,y,vx:rand(-160,160),vy:rand(-260,-40),life:.6,color});}
 function confetti(x,y,n){if(!G)return;const cols=['#ff5f9e','#ffb347','#7b5cff','#37d67a','#37c6ff','#ffffff'];
   for(let i=0;i<(n||30);i++)G.parts.push({x:x+rand(-40,40),y,vx:rand(-200,200),vy:rand(-400,-80),life:rand(.8,1.6),color:pick(cols),conf:true});}
-function drawParts(dt){if(!G)return;G.parts=G.parts.filter(p=>p.life>0);for(const p of G.parts){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;ctx.globalAlpha=Math.max(0,Math.min(1,p.life));ctx.fillStyle=p.color;
+function drawParts(dt){if(!G)return;G.parts=G.parts.filter(p=>p.life>0);for(const p of G.parts){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(!p.fire)p.vy+=500*dt;ctx.globalAlpha=Math.max(0,Math.min(1,p.life*(p.fire?2.2:1)));ctx.fillStyle=p.color;
   if(p.conf){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*9);ctx.fillRect(-5,-3,10,6);ctx.restore();}
-  else{ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fill();}}ctx.globalAlpha=1;}
+  else{ctx.beginPath();ctx.arc(p.x,p.y,p.fire?(p.r||9)*(.4+p.life*1.4):5,0,7);ctx.fill();}}ctx.globalAlpha=1;}
 function heroGlow(x,y,r){const gl=ctx.createRadialGradient(x,y,10,x,y,r);gl.addColorStop(0,'rgba(255,255,255,.38)');gl.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
 /* --- personaje vivo: inclinación, squash & stretch, destello --- */
 function drawHero(img,cx,cy,w,h,o){
@@ -542,6 +546,100 @@ function startCatch(g){
       if(!st.dying){st.dying=1.8;st.cleanup();confetti(st.heroX,hy-40,50);}
       else{st.dying-=dt;if(Math.random()<.5)confetti(rand(0,W),-20,3);
         if(st.dying<=0){endGame(g.title,st.score,st.score>=200?'¡Increíble! Eres un maestro.':'¡Buen intento! Sigue practicando.',st.score>=200);return;}}
+    }
+  }
+  st.raf=requestAnimationFrame(loop);
+}
+
+/* ---------- MECHANIC: DRAGON (vuela, aletea y escupe fuego) ---------- */
+function startDragon(g){
+  const frames=[IMG['h_dragon'],IMG['h_dragon_f2'],IMG['h_dragon_f3']];
+  const seq=[0,1,0,2]; // medio, arriba, medio, abajo = aleteo real
+  const bg=IMG['b_'+g.id],set=CATCHSET.dragon;
+  const hw=Math.min(W*.5,330),hh=hw*(frames[0].height/frames[0].width),hy=H-hh-140;
+  const st={mode:'dragon',raf:0,last:0,heroX:W/2,px:W/2,flap:0,happy:0,dizzy:0,dying:0,items:[],parts:[],score:0,lives:3,combo:0,level:1,spawnT:0,keys:{l:false,r:false},fire:0,fireCd:0,hint:3.5};
+  G=st;musicStart(g.id);
+  const px=e=>(e.touches?e.touches[0].clientX:e.clientX);
+  let drag=false,downT=0,downX=0,moved=0;
+  canvas.onpointerdown=e=>{drag=true;moved=0;downT=performance.now();downX=px(e);st.heroX=clamp(px(e),hw/2,W-hw/2);};
+  canvas.onpointermove=e=>{if(drag){const x=px(e);moved=Math.max(moved,Math.abs(x-downX));st.heroX=clamp(x,hw/2,W-hw/2);}};
+  canvas.onpointerup=()=>{drag=false;if(performance.now()-downT<260&&moved<24&&st.fireCd<=0&&!st.dying){st.fire=.7;st.fireCd=1.1;sfx.fire();}};
+  $('#btnLeft').onpointerdown=()=>st.keys.l=true;$('#btnLeft').onpointerup=()=>st.keys.l=false;
+  $('#btnRight').onpointerdown=()=>st.keys.r=true;$('#btnRight').onpointerup=()=>st.keys.r=false;
+  const keyH=e=>{if(e.key==='ArrowLeft'||e.key==='a')st.keys.l=e.type==='keydown';if(e.key==='ArrowRight'||e.key==='d')st.keys.r=e.type==='keydown';if(e.code==='Space'&&e.type==='keydown'&&st.fireCd<=0&&!st.dying){st.fire=.7;st.fireCd=1.1;sfx.fire();}};
+  window.addEventListener('keydown',keyH);window.addEventListener('keyup',keyH);
+  st.cleanup=()=>{window.removeEventListener('keydown',keyH);window.removeEventListener('keyup',keyH);canvas.onpointerdown=canvas.onpointermove=canvas.onpointerup=null;};
+  hud(g.title,0,3);
+  function loop(ts){
+    if(!G)return;st.raf=requestAnimationFrame(loop);
+    const dt=Math.min(.05,(ts-st.last)/1000||0);st.last=ts;const t=ts/1000;
+    if(!st.dying){
+      if(st.keys.l)st.heroX-=W*.9*dt;if(st.keys.r)st.heroX+=W*.9*dt;
+      st.heroX=clamp(st.heroX,hw/2,W-hw/2);
+      st.spawnT-=dt;
+      if(st.spawnT<=0){st.spawnT=Math.max(.35,.85-st.level*.06);
+        const good=Math.random()<.68;
+        st.items.push({x:rand(30,W-30),y:-40,vy:rand(180,260)+st.level*28,good,kind:good?pick(set.goods):set.bad,r:rand(20,30),wob:rand(0,6)});
+      }
+    }
+    st.fireCd=Math.max(0,st.fireCd-dt);st.hint=Math.max(0,st.hint-dt);
+    updAmbient(dt,g.id);
+    ctx.save();
+    if(SHAKE>0){ctx.translate(rand(-SHAKE,SHAKE),rand(-SHAKE,SHAKE));SHAKE*=.88;if(SHAKE<.5)SHAKE=0;}
+    drawCover(bg);drawAmbient();
+    // vuelo: aleteo real con 3 cuadros + planeo + inclinación al girar
+    st.happy=Math.max(0,st.happy-dt);st.dizzy=Math.max(0,st.dizzy-dt);
+    const vx=(st.heroX-st.px)/Math.max(dt,.001);st.px=st.heroX;
+    st.flap+=dt*7;
+    const frame=frames[seq[Math.floor(st.flap)%4]];
+    const bob=Math.sin(t*2.4)*13;
+    const tilt=clamp(vx/2000,-.3,.3)+(st.dizzy>0?Math.sin(t*28)*.5:0);
+    let sx=1,sy=1+Math.sin(t*3)*.02;
+    if(st.happy>0){const k=1-st.happy/.35;sy*=1-.2*Math.sin(k*Math.PI);sx*=1+.18*Math.sin(k*Math.PI);}
+    if(st.dying)st.happy=1;
+    const hyF=hy+hh/2+bob;
+    drawHero(frame,st.heroX,hyF,hw,hh,{tilt,sx,sy,flash:st.dizzy>0&&Math.floor(t*14)%2===0});
+    // aliento de fuego: cono hacia arriba desde el hocico que quema rocas
+    if(st.fire>0){
+      st.fire-=dt;
+      const mx=st.heroX,my=hyF-hh*.32;
+      for(let i=0;i<7;i++)G.parts.push({x:mx+rand(-16,16),y:my+rand(-8,8),vx:rand(-70,70),vy:rand(-460,-200),life:rand(.25,.5),color:pick(['#ffdd44','#ff9933','#ff5511','#ffcc33','#ff6600']),fire:true,r:rand(7,15)});
+      for(const it of st.items){
+        if(it.hit||it.good)continue;
+        const dx=Math.abs(it.x-mx),dy=(my-10)-it.y;
+        if(dy>0&&dy<430&&dx<70+dy*.5){it.hit=true;
+          st.score+=15;st.combo++;st.happy=.3;
+          burst(it.x,it.y,'#ff7b3b');burst(it.x,it.y,'#ffd93b');
+          addFloat(it.x,it.y-24,'+15 🔥','#ffb347');sfx.pop();
+          if(st.combo%12===0){st.level++;burst(st.heroX,hyF-hh/2,'#7b5cff');addFloat(st.heroX,hyF-hh/2-40,'¡Nivel '+st.level+'!','#7b5cff');}
+          hud(g.title,st.score,st.lives);}
+      }
+    }
+    // items: el tesoro se atrapa con el cuerpo, las rocas que no quemaste duelen
+    for(const it of st.items){
+      it.y+=it.vy*dt;it.x+=Math.sin(t*3+it.wob)*30*dt;
+      if(it.good)drawGood(it.kind,it.x,it.y,it.r,t);else drawBad(it.kind,it.x,it.y,it.r,t);
+      if(!st.dying&&it.y>hy+hh*.3&&it.y<hy+hh&&Math.abs(it.x-st.heroX)<hw*.42&&!it.hit){
+        it.hit=true;
+        if(it.good){const pts=10+st.combo*2;st.score+=pts;st.combo++;st.happy=.35;
+          burst(it.x,it.y,'#ffd93b');addFloat(it.x,it.y-24,'+'+pts,'#ffd93b');sfx.good();
+          if(st.combo%12===0){st.level++;burst(st.heroX,hyF-hh/2,'#7b5cff');addFloat(st.heroX,hyF-hh/2-40,'¡Nivel '+st.level+'!','#7b5cff');}
+        }else{st.lives--;st.combo=0;st.dizzy=.6;shakeStart(13);
+          burst(it.x,it.y,'#ff5f5f');addFloat(it.x,it.y-24,'¡Ay!','#ff5f5f');sfx.bad();if(navigator.vibrate)navigator.vibrate(120);}
+        hud(g.title,st.score,st.lives);
+      }
+    }
+    st.items=st.items.filter(i=>!i.hit&&i.y<H+60);
+    drawFore(t,7);
+    ctx.restore();
+    if(st.hint>0){ctx.fillStyle='#ffffffee';ctx.font='700 21px Fredoka,sans-serif';ctx.textAlign='center';ctx.strokeStyle='#00000088';ctx.lineWidth=4;ctx.strokeText('🔥 ¡Toca al dragón para escupir fuego!',W/2,H*.32);ctx.fillText('🔥 ¡Toca al dragón para escupir fuego!',W/2,H*.32);}
+    if(st.combo>0&&!st.dying){ctx.fillStyle='#fff';ctx.font='700 22px Fredoka,sans-serif';ctx.textAlign='center';ctx.fillText('¡x'+st.combo+'!',st.heroX,hy-14);}
+    if(st.level>1){ctx.fillStyle='#ffffffcc';ctx.font='600 18px Fredoka,sans-serif';ctx.textAlign='left';ctx.fillText('Nivel '+st.level,14,H-150);}
+    drawParts(dt);drawFloats(dt);
+    if(st.lives<=0){
+      if(!st.dying){st.dying=1.8;st.cleanup();confetti(st.heroX,hyF-40,50);}
+      else{st.dying-=dt;if(Math.random()<.5)confetti(rand(0,W),-20,3);
+        if(st.dying<=0){endGame(g.title,st.score,st.score>=200?'¡Increíble! Eres un maestro dragón.':'¡Buen intento! Sigue practicando.',st.score>=200);return;}}
     }
   }
   st.raf=requestAnimationFrame(loop);
