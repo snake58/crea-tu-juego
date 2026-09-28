@@ -50,7 +50,7 @@ p.sub{opacity:.85;text-align:center;margin:0 0 18px;font-size:1.02rem;max-width:
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 /* ---------- GAME ---------- */
 #screen-game{background:#000;padding:0}
-#gameCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#gameCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 10px;z-index:5;pointer-events:none}
 .hudpill{background:#000000a0;border-radius:999px;padding:8px 16px;font-size:1rem;font-weight:600;backdrop-filter:blur(4px);white-space:nowrap}
 #muteBtn{pointer-events:auto;padding:8px 12px}
@@ -214,6 +214,7 @@ function matchGame(text){
   return GAMES.find(g=>g.id===fb);
 }
 let currentGame=null, currentIdea='';
+let ASSETS_READY=false;
 
 /* ---------- assets ---------- */
 const IMG={};
@@ -234,10 +235,12 @@ async function loadAssets(){
   for(const g of GAMES){files['h_'+g.id]=g.hero;files['b_'+g.id]=g.bg;}
   for(const k in files){IMG[k]=await loadImg(files[k]);}
   for(const g of GAMES){const im=IMG['h_'+g.id];if(im)IMG['h_'+g.id]=chromaKey(im);}
-  IMG['h_dragon_f2']=chromaKey(await loadImg('assets/heroe-dragon-alas2.webp'));
-  IMG['h_dragon_f3']=chromaKey(await loadImg('assets/heroe-dragon-alas3.webp'));
+  const _f2=await loadImg('assets/heroe-dragon-alas2.webp');if(_f2)IMG['h_dragon_f2']=chromaKey(_f2);
+  const _f3=await loadImg('assets/heroe-dragon-alas3.webp');if(_f3)IMG['h_dragon_f3']=chromaKey(_f3);
   for(const g of GAMES){try{KEYURL[g.id]=IMG['h_'+g.id].toDataURL('image/webp',.9);}catch(e){}}
   startCarousel();
+  ASSETS_READY=true;
+  const cb=$('#createBtn');if(cb){cb.disabled=false;cb.textContent='¡Crear mi juego!';}
 }
 
 /* ---------- screens ---------- */
@@ -259,6 +262,7 @@ const EXAMPLES=['un dragón que escupe fuego','un robot en el espacio','un ninja
 function buildChips(){$('#chips').innerHTML='';EXAMPLES.forEach(e=>{const c=document.createElement('div');c.className='chip';c.textContent='💡 '+e;c.onclick=()=>{$('#ideaInput').value=e;startCreate();};$('#chips').appendChild(c);});}
 
 async function startCreate(){
+  if(!ASSETS_READY)return;
   ac();
   const idea=$('#ideaInput').value.trim()||pick(EXAMPLES);
   currentIdea=idea;currentGame=matchGame(idea);
@@ -278,6 +282,7 @@ async function startCreate(){
   startGame(currentGame);
 }
 $('#createBtn').onclick=startCreate;
+{const _cb=$('#createBtn');_cb.disabled=true;_cb.textContent='⏳ Cargando…';}
 $('#ideaInput').addEventListener('keydown',e=>{if(e.key==='Enter')startCreate();});
 
 /* ---------- game shell ---------- */
@@ -554,9 +559,11 @@ function startCatch(g){
 
 /* ---------- MECHANIC: DRAGON (vuela, aletea y escupe fuego) ---------- */
 function startDragon(g){
-  const frames=[IMG['h_dragon'],IMG['h_dragon_f2'],IMG['h_dragon_f3']];
+  const _d0=IMG['h_dragon'];
+  const frames=[_d0,IMG['h_dragon_f2']||_d0,IMG['h_dragon_f3']||_d0];
   const seq=[0,1,0,2]; // medio, arriba, medio, abajo = aleteo real
   const bg=IMG['b_'+g.id],set=CATCHSET.dragon;
+  if(!_d0||!bg){show('#screen-home');return;}
   const hw=Math.min(W*.5,330),hh=hw*(frames[0].height/frames[0].width),hy=H-hh-140;
   const st={mode:'dragon',raf:0,last:0,heroX:W/2,px:W/2,flap:0,happy:0,dizzy:0,dying:0,items:[],parts:[],score:0,lives:3,combo:0,level:1,spawnT:0,keys:{l:false,r:false},fire:0,fireCd:0,hint:3.5};
   G=st;musicStart(g.id);
