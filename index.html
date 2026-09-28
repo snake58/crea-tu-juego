@@ -256,8 +256,7 @@ async function loadAssets(){
   for(const g of GAMES){files['h_'+g.id]=g.hero;files['b_'+g.id]=g.bg;}
   for(const k in files){IMG[k]=await loadImg(files[k]);}
   for(const g of GAMES){const im=IMG['h_'+g.id];if(im)IMG['h_'+g.id]=chromaKey(im);}
-  const _f2=await loadImg('assets/heroe-dragon-alas2.webp');if(_f2)IMG['h_dragon_f2']=chromaKey(_f2);
-  const _f3=await loadImg('assets/heroe-dragon-alas3.webp');if(_f3)IMG['h_dragon_f3']=chromaKey(_f3);
+  for(let _vi=1;_vi<=23;_vi++){const _vf=await loadImg('assets/heroe-dragon-v'+String(_vi).padStart(2,'0')+'.webp');if(_vf)IMG['h_dragon_v'+_vi]=_vf;}
   for(const _h of [['h_robot_f1','heroe-robot-run1.webp'],['h_robot_f2','heroe-robot-run2.webp'],
     ['h_bruja_f2','heroe-bruja-idle2.webp'],['h_bruja_cast','heroe-bruja-cast.webp'],
     ['h_explorador_f1','heroe-explorador-swim1.webp'],['h_explorador_f2','heroe-explorador-swim2.webp']]){
@@ -643,8 +642,7 @@ function startCatch(g){
 /* ---------- MECHANIC: DRAGON (vuela, aletea y escupe fuego) ---------- */
 function startDragon(g){
   const _d0=IMG['h_dragon'];
-  const frames=[_d0,IMG['h_dragon_f2']||_d0,IMG['h_dragon_f3']||_d0];
-  const seq=[0,1,0,2]; // medio, arriba, medio, abajo = aleteo real
+  const frames=[];for(let _vi=1;_vi<=23;_vi++)frames.push(IMG['h_dragon_v'+_vi]||_d0); // secuencia de video: aleteo real
   const bg=IMG['b_'+g.id],set=CATCHSET.dragon;
   if(!_d0||!bg){show('#screen-home');return;}
   const hw=Math.min(W*.5,330),hh=hw*(frames[0].height/frames[0].width),hy=H-hh-140;
@@ -678,11 +676,11 @@ function startDragon(g){
     ctx.save();
     if(SHAKE>0){ctx.translate(rand(-SHAKE,SHAKE),rand(-SHAKE,SHAKE));SHAKE*=.88;if(SHAKE<.5)SHAKE=0;}
     drawCover(bg);drawAmbient();
-    // vuelo: aleteo real con 3 cuadros + planeo + inclinación al girar
+    // vuelo: secuencia de video (23 cuadros, aleteo real) + planeo + inclinación al girar
     st.happy=Math.max(0,st.happy-dt);st.dizzy=Math.max(0,st.dizzy-dt);
     const vx=(st.heroX-st.px)/Math.max(dt,.001);st.px=st.heroX;
-    st.flap+=dt*7;
-    const frame=frames[seq[Math.floor(st.flap)%4]];
+    st.flap+=dt*12; // 23 cuadros de video en loop = 1 aleteo completo
+    const frame=frames[Math.floor(st.flap)%frames.length];
     const bob=Math.sin(t*2.4)*13;
     const tilt=clamp(vx/2000,-.3,.3)+(st.dizzy>0?Math.sin(t*28)*.5:0);
     let sx=1,sy=1+Math.sin(t*3)*.02;
