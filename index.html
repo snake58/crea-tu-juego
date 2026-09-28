@@ -199,18 +199,19 @@ const sfx={
 
 /* ---------- games ---------- */
 const GAMES=[
- {id:'dragon',keys:['dragon','dragón','dragones','tesoro','tesoros','fuego','volar','volando'],title:'Dragón: Aliento de Fuego',hero:'assets/heroe-dragon.webp',bg:'assets/fondo-cielo-dragon.webp',mech:'catch',heroW:.34,catchMsg:'¡Vuela con el dragón! Toca para escupir FUEGO y quemar las rocas. ¡Atrapa el tesoro!'},
- {id:'robot',keys:['robot','espacio','planeta','cohete','nave','alien','marte','luna'],title:'Robot: Carrera Espacial',hero:'assets/heroe-robot.webp',bg:'assets/fondo-espacio.webp',mech:'run',heroW:.26,catchMsg:'¡Salta los cráteres! ¡Corre sin parar!'},
- {id:'ninja',keys:['ninja','sombra','samurai','katana','sigilo'],title:'Ninja: Misión Sombra',hero:'assets/heroe-ninja.webp',bg:'assets/fondo-dojo.webp',mech:'tap',heroW:.30,catchMsg:'¡Toca las estrellas! ¡No toques las bombas!'},
- {id:'bruja',keys:['bruja','magia','hechizo','poción','pocion','mago','hada'],title:'Bruja: Pociones Mágicas',hero:'assets/heroe-bruja.webp',bg:'assets/fondo-castillo.webp',mech:'catch',heroW:.28,catchMsg:'¡Atrapa estrellas mágicas! ¡Esquiva el carbón!'},
- {id:'explorador',keys:['mar','océano','oceano','pez','tiburón','tiburon','buzo','agua','isla','pirata','selva','explorador'],title:'Explorador: Tesoro del Océano',hero:'assets/heroe-explorador.webp',bg:'assets/fondo-oceano.webp',mech:'catch',heroW:.28,catchMsg:'¡Atrapa las perlas! ¡Esquiva las medusas!'},
+ {id:'dragon',keys:['dragon','dragón','dragones','tesoro','tesoros','fuego','volar','volando','dinosaurio','dinosaurios','monstruo','bestia','volcan','volcán'],title:'Dragón: Aliento de Fuego',hero:'assets/heroe-dragon.webp',bg:'assets/fondo-cielo-dragon.webp',mech:'catch',heroW:.34,catchMsg:'¡Vuela con el dragón! Toca para escupir FUEGO y quemar las rocas. ¡Atrapa el tesoro!'},
+ {id:'robot',keys:['robot','espacio','planeta','cohete','nave','alien','marte','luna','carro','coche','auto','moto','avion','avión','carrera','carros'],title:'Robot: Carrera Espacial',hero:'assets/heroe-robot.webp',bg:'assets/fondo-espacio.webp',mech:'run',heroW:.26,catchMsg:'¡Salta los cráteres! ¡Corre sin parar!'},
+ {id:'ninja',keys:['ninja','sombra','samurai','katana','sigilo','guerrero','pelea','espada'],title:'Ninja: Misión Sombra',hero:'assets/heroe-ninja.webp',bg:'assets/fondo-dojo.webp',mech:'tap',heroW:.30,catchMsg:'¡Toca las estrellas! ¡No toques las bombas!'},
+ {id:'bruja',keys:['bruja','magia','hechizo','poción','pocion','mago','hada','fantasma','halloween','zombie','vampiro'],title:'Bruja: Pociones Mágicas',hero:'assets/heroe-bruja.webp',bg:'assets/fondo-castillo.webp',mech:'catch',heroW:.28,catchMsg:'¡Atrapa estrellas mágicas! ¡Esquiva el carbón!'},
+ {id:'explorador',keys:['mar','océano','oceano','pez','tiburón','tiburon','buzo','agua','isla','pirata','selva','explorador','perro','gato','animal','animales','delfin','delfín','ballena','playa','tortuga'],title:'Explorador: Tesoro del Océano',hero:'assets/heroe-explorador.webp',bg:'assets/fondo-oceano.webp',mech:'catch',heroW:.28,catchMsg:'¡Atrapa las perlas! ¡Esquiva las medusas!'},
 ];
 const FALLBACKS=['dragon','robot','ninja','bruja','explorador'];
 function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function matchGame(text){
   const t=norm(text);
   for(const g of GAMES){for(const k of g.keys){if(t.includes(norm(k)))return g;}}
-  return GAMES[FALLBACKS[Math.floor(Math.random()*FALLBACKS.length)]];
+  const fb=pick(FALLBACKS);
+  return GAMES.find(g=>g.id===fb);
 }
 let currentGame=null, currentIdea='';
 
